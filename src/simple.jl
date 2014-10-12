@@ -1,6 +1,3 @@
-# ex. MyNumber(10).value
-# ex. Add(MyNumber(10), Num(2))
-
 immutable MyNumber
     value::Number
 end
@@ -24,7 +21,19 @@ type LessThan
     right
 end
 
-typealias Operator Union(Mult, Add, LessThan)
+type Or
+    left
+    right
+end
+
+type And
+    left
+    right
+end
+
+typealias NumberOperator Union(Mult, Add, LessThan)
+typealias BoolOperator Union(Or, And)
+typealias Operator Union(NumberOperator, BoolOperator)
 typealias Value Union(MyNumber, MyBool)
 
 is_reducible(expression::Operator) = true
@@ -35,21 +44,40 @@ function reduce(exp::Operator)
         operator = (+)
     elseif typeof(exp) == Mult
         operator = (*)
-   elseif typeof(exp) == LessThan
+    elseif typeof(exp) == LessThan
         operator = (<)
-   end
+    elseif typeof(exp) == And
+        operator = (&)
+    elseif typeof(exp) == Or
+        operator = (|)
+    end
 
     if is_reducible(exp.left)
         return reduce(typeof(exp)(reduce(exp.left), exp.right))
     elseif is_reducible(exp.right)
         return reduce(typeof(exp)(exp.left, reduce(exp.right)))
-    else
+    end
+
+    if typeof(exp) <: NumberOperator
         return MyNumber(operator(exp.left.value, exp.right.value))
+    elseif typeof(exp) <: BoolOperator
+        return MyBool(operator(exp.left.value, exp.right.value))
     end
 end
 
 function to_s(exp::Operator)
-    operator = typeof(exp) == Add ? " + " : " * "
+    if typeof(exp) == Add 
+         operator = (" + ")
+    elseif typeof(exp) == Mult
+         operator = (" * ")
+    elseif typeof(exp) == LessThan
+         operator = (" < ")
+    elseif typeof(exp) == Or
+         operator = (" & ")
+    elseif typeof(exp) == And
+         operator = (" | ")
+    end
+
     return string("(", to_s(exp.left), operator, to_s(exp.right), ")")
 end
 

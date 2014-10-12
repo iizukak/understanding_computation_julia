@@ -19,7 +19,12 @@ type Mult
     right
 end
 
-typealias Operator Union(Mult, Add)
+type LessThan
+    left
+    right
+end
+
+typealias Operator Union(Mult, Add, LessThan)
 typealias Value Union(MyNumber, MyBool)
 
 is_reducible(expression::Operator) = true
@@ -30,7 +35,9 @@ function reduce(exp::Operator)
         operator = (+)
     elseif typeof(exp) == Mult
         operator = (*)
-    end
+   elseif typeof(exp) == LessThan
+        operator = (<)
+   end
 
     if is_reducible(exp.left)
         return reduce(typeof(exp)(reduce(exp.left), exp.right))

@@ -1,8 +1,12 @@
-# ex. Num(10).value
-# ex. Add(Num(10), Num(2))
+# ex. MyNumber(10).value
+# ex. Add(MyNumber(10), Num(2))
 
-immutable Num
+immutable MyNumber
     value::Number
+end
+
+immutable MyBool
+    value::Bool
 end
 
 type Add
@@ -15,26 +19,34 @@ type Mult
     right
 end
 
-is_reducible(expression::Union(Mult, Add)) = true
-is_reducible(Num) = false
+typealias Operator Union(Mult, Add)
+typealias Value Union(MyNumber, MyBool)
 
-function reduce(exp::Add)
+is_reducible(expression::Operator) = true
+is_reducible(expression::Value) = false
+
+function reduce(exp::Operator)
+    if typeof(exp) == Add 
+        operator = (+)
+    elseif typeof(exp) == Mult
+        operator = (*)
+    end
+
     if is_reducible(exp.left)
-        return reduce(Add(reduce(exp.left), exp.right))
+        return reduce(typeof(exp)(reduce(exp.left), exp.right))
     elseif is_reducible(exp.right)
-        return reduce(Add(exp.left, reduce(exp.right)))
+        return reduce(typeof(exp)(exp.left, reduce(exp.right)))
     else
-        return Num(exp.left.value + exp.right.value)
+        return MyNumber(operator(exp.left.value, exp.right.value))
     end
 end
 
-function reduce(exp::Mult)
-    if is_reducible(exp.left)
-        return reduce(Mult(reduce(exp.left), exp.right))
-    elseif is_reducible(exp.right)
-        return reduce(Mult(exp.left, reduce(exp.right)))
-    else
-        return Num(exp.left.value * exp.right.value)
-    end
+function to_s(exp::Operator)
+    operator = typeof(exp) == Add ? " + " : " * "
+    return string("(", to_s(exp.left), operator, to_s(exp.right), ")")
+end
+
+function to_s(exp::Value)
+    return string(exp.value)
 end
 
